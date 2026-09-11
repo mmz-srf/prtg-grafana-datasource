@@ -1,7 +1,7 @@
 {
   "$schema": "https://raw.githubusercontent.com/grafana/grafana/main/docs/sources/developers/plugins/plugin.schema.json",
   "type": "datasource",
-  "name": "Prtg-Datasource",
+  "name": "PRTG-Datasource",
   "id": "srgssr-prtg-datasource",
   "metrics": true,
   "backend": true,
@@ -9,12 +9,12 @@
   "info": {
     "description": "",
     "author": {
-      "name": "Srgssr"
+      "name": "Gianni Carafa"
     },
     "keywords": ["datasource"],
     "logos": {
-      "small": "img/logo.svg",
-      "large": "img/logo.svg"
+      "small": "img/tacho_vector.svg",
+      "large": "img/tacho_vector.svg"
     },
     "links": [],
     "screenshots": [],
