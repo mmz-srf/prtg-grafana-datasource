@@ -2,115 +2,119 @@ package plugin
 
 import (
 	"context"
-	"encoding/json"
 	"fmt"
+	"net/http"
+	"net/url"
 	"time"
 
 	"github.com/grafana/grafana-plugin-sdk-go/backend"
+	"github.com/grafana/grafana-plugin-sdk-go/backend/httpclient"
 	"github.com/grafana/grafana-plugin-sdk-go/backend/instancemgmt"
-	"github.com/grafana/grafana-plugin-sdk-go/data"
+	"github.com/grafana/grafana-plugin-sdk-go/backend/resource/httpadapter"
 	"github.com/srgssr/prtg-datasource/pkg/models"
+	"github.com/srgssr/prtg-datasource/pkg/prtg"
 )
 
-// Make sure Datasource implements required interfaces. This is important to do
-// since otherwise we will only get a not implemented error response from plugin in
-// runtime. In this example datasource instance implements backend.QueryDataHandler,
-// backend.CheckHealthHandler interfaces. Plugin should not implement all these
-// interfaces - only those which are required for a particular task.
+// Make sure Datasource implements required interfaces. This is important to
+// do since otherwise we will only get a not implemented error response from
+// the plugin at runtime.
 var (
 	_ backend.QueryDataHandler      = (*Datasource)(nil)
 	_ backend.CheckHealthHandler    = (*Datasource)(nil)
+	_ backend.CallResourceHandler   = (*Datasource)(nil)
 	_ instancemgmt.InstanceDisposer = (*Datasource)(nil)
 )
 
-// NewDatasource creates a new datasource instance.
-func NewDatasource(_ context.Context, _ backend.DataSourceInstanceSettings) (instancemgmt.Instance, error) {
-	return &Datasource{}, nil
+// requestTimeout bounds every HTTP request this datasource makes to PRTG.
+// It's kept comfortably under PRTG APIv2's documented 25s server-side
+// execution timeout so we see our own timeout (a clearer error) rather than
+// PRTG's GATEWAY_TIMEOUT in the common case.
+const requestTimeout = 20 * time.Second
+
+// Datasource implements the PRTG APIv2 Grafana datasource: QueryData,
+// CheckHealth and CallResource, backed by a pkg/prtg.Client.
+type Datasource struct {
+	client          *prtg.Client
+	resourceHandler backend.CallResourceHandler
 }
 
-// Datasource is an example datasource which can respond to data queries, reports
-// its health and has streaming skills.
-type Datasource struct{}
-
-// Dispose here tells plugin SDK that plugin wants to clean up resources when a new instance
-// created. As soon as datasource settings change detected by SDK old datasource instance will
-// be disposed and a new one will be created using NewSampleDatasource factory function.
-func (d *Datasource) Dispose() {
-	// Clean up datasource instance resources.
-}
-
-// QueryData handles multiple queries and returns multiple responses.
-// req contains the queries []DataQuery (where each query contains RefID as a unique identifier).
-// The QueryDataResponse contains a map of RefID to the response for each query, and each response
-// contains Frames ([]*Frame).
-func (d *Datasource) QueryData(ctx context.Context, req *backend.QueryDataRequest) (*backend.QueryDataResponse, error) {
-	// create response struct
-	response := backend.NewQueryDataResponse()
-
-	// loop over queries and execute them individually.
-	for _, q := range req.Queries {
-		res := d.query(ctx, req.PluginContext, q)
-
-		// save the response in a hashmap
-		// based on with RefID as identifier
-		response.Responses[q.RefID] = res
-	}
-
-	return response, nil
-}
-
-type queryModel struct{}
-
-func (d *Datasource) query(_ context.Context, pCtx backend.PluginContext, query backend.DataQuery) backend.DataResponse {
-	var response backend.DataResponse
-
-	// Unmarshal the JSON into our queryModel.
-	var qm queryModel
-
-	err := json.Unmarshal(query.JSON, &qm)
+// NewDatasource creates a new datasource instance: it loads and validates
+// the configured settings, builds an HTTP client (via the SDK's
+// backend/httpclient, honoring TLS-skip-verify and a bounded timeout) and an
+// Authenticator matching the configured auth mode, and wires up the
+// CallResource route table.
+func NewDatasource(_ context.Context, settings backend.DataSourceInstanceSettings) (instancemgmt.Instance, error) {
+	pluginSettings, err := models.LoadPluginSettings(settings)
 	if err != nil {
-		return backend.ErrDataResponse(backend.StatusBadRequest, fmt.Sprintf("json unmarshal: %v", err.Error()))
+		return nil, err
+	}
+	if err := pluginSettings.Validate(); err != nil {
+		return nil, err
 	}
 
-	// create data frame response.
-	// For an overview on data frames and how grafana handles them:
-	// https://grafana.com/developers/plugin-tools/introduction/data-frames
-	frame := data.NewFrame("response")
+	baseURL, err := prtg.ParseServerURL(pluginSettings.ServerURL)
+	if err != nil {
+		return nil, err
+	}
 
-	// add fields.
-	frame.Fields = append(frame.Fields,
-		data.NewField("time", nil, []time.Time{query.TimeRange.From, query.TimeRange.To}),
-		data.NewField("values", nil, []int64{10, 20}),
-	)
+	httpClient, err := httpclient.New(httpclient.Options{
+		Timeouts: &httpclient.TimeoutOptions{
+			Timeout:               requestTimeout,
+			DialTimeout:           10 * time.Second,
+			KeepAlive:             30 * time.Second,
+			TLSHandshakeTimeout:   10 * time.Second,
+			ExpectContinueTimeout: 1 * time.Second,
+			MaxIdleConns:          100,
+			MaxIdleConnsPerHost:   100,
+			IdleConnTimeout:       90 * time.Second,
+		},
+		TLS: &httpclient.TLSOptions{
+			InsecureSkipVerify: pluginSettings.TLSSkipVerify,
+		},
+	})
+	if err != nil {
+		return nil, fmt.Errorf("building HTTP client: %w", err)
+	}
 
-	// add the frames to the response.
-	response.Frames = append(response.Frames, frame)
+	auth, err := newAuthenticator(pluginSettings, baseURL, httpClient)
+	if err != nil {
+		return nil, err
+	}
 
-	return response
+	client, err := prtg.NewClient(baseURL, httpClient, auth)
+	if err != nil {
+		return nil, err
+	}
+
+	ds := &Datasource{client: client}
+	ds.resourceHandler = httpadapter.New(ds.registerRoutes())
+	return ds, nil
 }
 
-// CheckHealth handles health checks sent from Grafana to the plugin.
-// The main use case for these health checks is the test button on the
-// datasource configuration page which allows users to verify that
-// a datasource is working as expected.
-func (d *Datasource) CheckHealth(_ context.Context, req *backend.CheckHealthRequest) (*backend.CheckHealthResult, error) {
-	res := &backend.CheckHealthResult{}
-	config, err := models.LoadPluginSettings(*req.PluginContext.DataSourceInstanceSettings)
-
-	if err != nil {
-		res.Status = backend.HealthStatusError
-		res.Message = "Unable to load settings"
-		return res, nil
+func newAuthenticator(settings *models.PluginSettings, baseURL *url.URL, httpClient *http.Client) (prtg.Authenticator, error) {
+	switch settings.AuthMode {
+	case models.AuthModeAPIKey:
+		return &prtg.APIKeyAuthenticator{APIKey: settings.Secrets.ApiKey}, nil
+	case models.AuthModeCredentials:
+		return &prtg.SessionAuthenticator{
+			BaseURL:    baseURL,
+			HTTPClient: httpClient,
+			Username:   settings.Username,
+			Password:   settings.Secrets.Password,
+		}, nil
+	default:
+		return nil, fmt.Errorf("unknown authentication mode %q", settings.AuthMode)
 	}
+}
 
-	if config.Secrets.ApiKey == "" {
-		res.Status = backend.HealthStatusError
-		res.Message = "API key is missing"
-		return res, nil
-	}
+// Dispose tells the plugin SDK that this instance wants to clean up
+// resources when a new instance is created (e.g. on settings change). The
+// datasource holds no resources that need explicit cleanup (the HTTP client
+// closes its idle connections on GC), so this is a no-op.
+func (d *Datasource) Dispose() {}
 
-	return &backend.CheckHealthResult{
-		Status:  backend.HealthStatusOk,
-		Message: "Data source is working",
-	}, nil
+// CallResource routes resource calls (see resources.go) through an
+// http.ServeMux via the SDK's resource/httpadapter.
+func (d *Datasource) CallResource(ctx context.Context, req *backend.CallResourceRequest, sender backend.CallResourceResponseSender) error {
+	return d.resourceHandler.CallResource(ctx, req, sender)
 }

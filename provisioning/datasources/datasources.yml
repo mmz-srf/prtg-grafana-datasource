@@ -9,6 +9,8 @@ datasources:
     version: 1
     editable: true
     jsonData:
-      path: '/resources'
+      serverUrl: 'https://prtg.example.com'
+      authMode: 'apiKey'
+      tlsSkipVerify: false
     secureJsonData:
       apiKey: 'api-key'
