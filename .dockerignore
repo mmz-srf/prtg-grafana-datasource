@@ -1,0 +1,12 @@
+# Keeps the mock-prtg service's build context (Dockerfile.mockserver, built
+# with context ".") small and fast -- it's the first service in this repo to
+# use a repo-root build context (the grafana service builds from .config/).
+node_modules
+.git
+dist
+coverage
+playwright-report
+test-results
+blob-report
+.yarn
+*.log

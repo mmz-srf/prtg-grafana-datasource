@@ -3,3 +3,17 @@ services:
     extends:
       file: .config/docker-compose-base.yaml
       service: grafana
+    depends_on:
+      - mock-prtg
+
+  # Standalone mock PRTG APIv2 server (see pkg/mockprtg, cmd/mockserver) for
+  # local development -- there is no official PRTG container, since PRTG
+  # itself is Windows-only, closed-source, license-bound software. The
+  # provisioned "prtg-datasource" datasource (provisioning/datasources/datasources.yml)
+  # points at it by default.
+  mock-prtg:
+    build:
+      context: .
+      dockerfile: Dockerfile.mockserver
+    ports:
+      - '8080:8080'

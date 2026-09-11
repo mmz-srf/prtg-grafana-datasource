@@ -88,6 +88,31 @@ Grafana supports a wide range of data sources, including Prometheus, MySQL, and 
    npm run lint:fix
    ```
 
+## Local development with a mock PRTG server
+
+There is no official PRTG container -- PRTG (Paessler) is Windows-only, closed-source, license-bound software. So `npm run server` (`docker compose up --build`) also starts a small standalone **mock PRTG APIv2 server** (`mock-prtg`, source in [pkg/mockprtg](pkg/mockprtg) / [cmd/mockserver](cmd/mockserver), built from [Dockerfile.mockserver](Dockerfile.mockserver)) alongside the Grafana dev container. It serves a seeded, realistic-looking object hierarchy (probes → groups → devices → sensors → channels: ping, CPU load, traffic, memory, disk free) with procedurally generated timeseries data, on `http://localhost:8080`.
+
+The provisioned `prtg-datasource` datasource ([provisioning/datasources/datasources.yml](provisioning/datasources/datasources.yml)) already points at it, so Grafana at `http://localhost:3000` should work against it out of the box -- no manual setup needed.
+
+Configuration (environment variables on the `mock-prtg` service, all optional):
+
+| Variable        | Default          | Purpose                                       |
+| --------------- | ---------------- | ---------------------------------------------- |
+| `PORT`          | `8080`           | listen port                                    |
+| `MOCK_API_KEY`  | `mock-api-key`   | bearer token accepted for the `apiKey` auth mode |
+| `MOCK_USERNAME` | `mock-user`      | username accepted by `POST /session` (`credentials` auth mode) |
+| `MOCK_PASSWORD` | `mock-password`  | password accepted by `POST /session`           |
+
+If you change `MOCK_API_KEY`, update `secureJsonData.apiKey` in `provisioning/datasources/datasources.yml` to match.
+
+Quick manual check without Grafana:
+
+```bash
+curl http://localhost:8080/api/v2/experimental/groups
+```
+
+This mock is unrelated to [pkg/plugin/fakeserver_test.go](pkg/plugin/fakeserver_test.go), a smaller, test-only PRTG double used by this repo's own Go unit tests.
+
 # Distributing your plugin
 
 When distributing a Grafana plugin either within the community or privately the plugin must be signed so the Grafana application can verify its authenticity. This can be done with the `@grafana/sign-plugin` package.

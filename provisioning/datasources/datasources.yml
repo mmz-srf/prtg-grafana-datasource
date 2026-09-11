@@ -9,8 +9,12 @@ datasources:
     version: 1
     editable: true
     jsonData:
-      serverUrl: 'https://prtg.example.com'
+      # Points at this repo's local mock-prtg service (docker-compose.yaml,
+      # pkg/mockprtg) so the datasource works out of the box against
+      # `npm run server` -- there is no official PRTG container to point at
+      # instead. Repoint this at a real PRTG server to test against one.
+      serverUrl: 'http://mock-prtg:8080'
       authMode: 'apiKey'
       tlsSkipVerify: false
     secureJsonData:
-      apiKey: 'api-key'
+      apiKey: 'mock-api-key'
