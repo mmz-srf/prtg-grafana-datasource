@@ -46,6 +46,18 @@ func LoadPluginSettings(source backend.DataSourceInstanceSettings) (*PluginSetti
 		}
 	}
 
+	// A brand-new datasource instance has no `authMode` key in jsonData at
+	// all (it's unset, not explicitly "apiKey") until a user actually
+	// interacts with the ConfigEditor's Authentication radio group -- which
+	// they have no reason to do, since it already *shows* "API Key" selected
+	// (ConfigEditor.tsx's `jsonData.authMode ?? 'apiKey'` display default).
+	// Mirror that same default here so an unmodified-but-visually-correct
+	// config doesn't fail validation with a confusing "unknown
+	// authentication mode \"\"" the first time someone saves it.
+	if settings.AuthMode == "" {
+		settings.AuthMode = AuthModeAPIKey
+	}
+
 	settings.Secrets = loadSecretPluginSettings(source.DecryptedSecureJSONData)
 
 	return &settings, nil
