@@ -7,7 +7,7 @@ jobs:
     permissions:
       contents: read
     steps:
-      - uses: actions/checkout@v6
+      - uses: actions/checkout@v7
         with:
           persist-credentials: false
 
@@ -30,7 +30,7 @@ jobs:
           echo "modulets=${MODULETS}" >> $GITHUB_OUTPUT
 
       - name: Compatibility check
-        uses: grafana/plugin-actions/is-compatible@is-compatible/v1.0.3
+        uses: grafana/plugin-actions/is-compatible@is-compatible/v1.0.4
         with:
           module: ${{ steps.find-module-ts.outputs.modulets }}
           comment-pr: 'no'
