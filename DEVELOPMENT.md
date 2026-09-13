@@ -88,6 +88,22 @@ Grafana supports a wide range of data sources, including Prometheus, MySQL, and 
    npm run lint:fix
    ```
 
+## PRTG API v2 routes used
+
+Every path below is relative to `<serverUrl>/api/v2` (see `prtg.ParseServerURL`, [pkg/prtg/client.go](pkg/prtg/client.go)). The list endpoints are plain GETs returning a bare JSON array, paginated via `offset`/`limit` query params and `X-Total-Count`/`X-Result-Count` response headers ([pkg/prtg/pagination.go](pkg/prtg/pagination.go)); all of them are still marked "Experimental" by Paessler.
+
+| Method & path | Called from | Purpose |
+| --- | --- | --- |
+| `POST /session` | `SessionAuthenticator` ([pkg/prtg/auth.go](pkg/prtg/auth.go)) | Logs in with username/password when `authMode: credentials`; re-called on proactive token refresh and on a 401 retry. |
+| `GET /experimental/groups` | `CheckHealth` ([pkg/plugin/health.go](pkg/plugin/health.go)); `GET /groups` resource route ([pkg/plugin/resources.go](pkg/plugin/resources.go)) | Health check (fetches a single item); top tier of the hierarchy picker (merged with `/probes` into one list). |
+| `GET /experimental/probes` | `GET /groups` resource route ([pkg/plugin/resources.go](pkg/plugin/resources.go)) | Same hierarchy-picker tier as groups -- PRTG probes and groups are shown as one flattened list. |
+| `GET /experimental/devices` | `GET /devices?groupId=` resource route ([pkg/plugin/resources.go](pkg/plugin/resources.go)) | Hierarchy picker: devices under a chosen group/probe. |
+| `GET /experimental/sensors` | `GET /sensors?deviceId=` resource route; regex query resolution ([pkg/plugin/query.go](pkg/plugin/query.go)); `SearchSensors` ([pkg/prtg/search.go](pkg/prtg/search.go)), backing `GET /sensors/search` | Hierarchy picker: sensors under a device; regex mode: candidate sensors to match by name; sensor-search preview. |
+| `GET /experimental/channels` | `GET /channels?sensorId=` resource route; hierarchy and regex query resolution ([pkg/plugin/query.go](pkg/plugin/query.go)); `SearchSensors` ([pkg/prtg/search.go](pkg/prtg/search.go)) | Hierarchy picker; resolving a query's target channel(s) -- both "current value" and "historic time series" queries start here to read `LastMeasurement`/`Path`/`Unit`; regex mode's per-sensor channel matching; sensor-search preview. |
+| `GET /experimental/timeseries/{sensorId}/{window}` | `FetchTimeSeries` ([pkg/prtg/timeseries.go](pkg/prtg/timeseries.go)), called from `buildTimeSeriesFrame` ([pkg/plugin/query.go](pkg/plugin/query.go)) | "Historic time series" queries. `window` is one of PRTG's 4 fixed windows (`live`/`short`/`medium`/`long`), picked by `prtg.SelectWindow` to cover the panel's requested time range. |
+
+"Current value" queries need no call beyond `/experimental/channels` above -- `ChannelInfo.LastMeasurement` already carries the latest value, so there's no separate "current value" endpoint.
+
 ## Local development with a mock PRTG server
 
 There is no official PRTG container -- PRTG (Paessler) is Windows-only, closed-source, license-bound software. So `npm run server` (`docker compose up --build`) also starts a small standalone **mock PRTG APIv2 server** (`mock-prtg`, source in [pkg/mockprtg](pkg/mockprtg) / [cmd/mockserver](cmd/mockserver), built from [Dockerfile.mockserver](Dockerfile.mockserver)) alongside the Grafana dev container. It serves a seeded, realistic-looking object hierarchy (probes → groups → devices → sensors → channels: ping, CPU load, traffic, memory, disk free) with procedurally generated timeseries data, on `http://localhost:8080`.
