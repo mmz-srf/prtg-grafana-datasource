@@ -46,3 +46,7 @@ ci/
 .idea
 
 .eslintcache
+
+# Local secrets for the optional pdc-agent docker-compose service (real
+# Grafana Cloud PDC tokens) -- see .env.example.
+.env

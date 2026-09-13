@@ -84,10 +84,21 @@ describe('ConfigEditor', () => {
     const onOptionsChange = jest.fn();
     render(<ConfigEditor options={createOptions()} onOptionsChange={onOptionsChange} />);
 
-    await userEvent.click(screen.getByRole('switch'));
+    await userEvent.click(screen.getByRole('switch', { name: 'Skip TLS Verify' }));
 
     expect(onOptionsChange).toHaveBeenCalledWith(
       expect.objectContaining({ jsonData: expect.objectContaining({ tlsSkipVerify: true }) })
+    );
+  });
+
+  it('toggles the secure socks proxy (Private Data Source Connect) switch', async () => {
+    const onOptionsChange = jest.fn();
+    render(<ConfigEditor options={createOptions()} onOptionsChange={onOptionsChange} />);
+
+    await userEvent.click(screen.getByRole('switch', { name: 'Secure Socks Proxy' }));
+
+    expect(onOptionsChange).toHaveBeenCalledWith(
+      expect.objectContaining({ jsonData: expect.objectContaining({ enableSecureSocksProxy: true }) })
     );
   });
 });

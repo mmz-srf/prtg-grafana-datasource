@@ -1,6 +1,7 @@
 package plugin
 
 import (
+	"context"
 	"encoding/json"
 	"testing"
 
@@ -25,7 +26,7 @@ func TestNewDatasource_ValidAPIKey(t *testing.T) {
 		"authMode":  "apiKey",
 	}, map[string]string{"apiKey": "some-key"})
 
-	inst, err := NewDatasource(nil, settings) //nolint:staticcheck // ctx unused by this constructor
+	inst, err := NewDatasource(context.Background(), settings)
 	if err != nil {
 		t.Fatalf("NewDatasource returned error: %v", err)
 	}
@@ -48,7 +49,7 @@ func TestNewDatasource_ValidCredentials(t *testing.T) {
 		"username":  "alice",
 	}, map[string]string{"password": "s3cret"})
 
-	inst, err := NewDatasource(nil, settings) //nolint:staticcheck
+	inst, err := NewDatasource(context.Background(), settings)
 	if err != nil {
 		t.Fatalf("NewDatasource returned error: %v", err)
 	}
@@ -105,7 +106,7 @@ func TestNewDatasource_Errors(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			settings := newInstanceSettings(t, tt.jsonData, tt.secrets)
-			_, err := NewDatasource(nil, settings) //nolint:staticcheck
+			_, err := NewDatasource(context.Background(), settings)
 			if tt.wantError && err == nil {
 				t.Fatal("expected an error, got nil")
 			}

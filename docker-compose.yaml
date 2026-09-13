@@ -17,3 +17,25 @@ services:
       dockerfile: Dockerfile.mockserver
     ports:
       - '8080:8080'
+
+  # Optional: Grafana Cloud's Private Data Source Connect (PDC) agent --
+  # official image, no custom code -- for reaching a real PRTG server that
+  # sits in a private network from a Grafana Cloud instance. Opt-in only
+  # (profile "pdc"): plain `docker compose up`/`npm run server` never starts
+  # it. Requires GCLOUD_PDC_SIGNING_TOKEN/GCLOUD_HOSTED_GRAFANA_ID/
+  # GCLOUD_PDC_CLUSTER (from Grafana Cloud: Connections > Private data
+  # source connect > your network > Configuration Details), e.g. in a local
+  # .env file -- see README.md's PDC section.
+  pdc-agent:
+    image: grafana/pdc-agent:latest
+    profiles: ['pdc']
+    restart: unless-stopped
+    # Plain (non-required) substitution: Compose interpolates every service's
+    # environment up front regardless of profiles, so a required (":?")
+    # variable here would break `docker compose up`/`npm run server` for
+    # everyone, even though this service never starts without --profile pdc.
+    # The agent itself fails fast with a clear error if these are left empty.
+    environment:
+      GCLOUD_PDC_SIGNING_TOKEN: ${GCLOUD_PDC_SIGNING_TOKEN:-}
+      GCLOUD_HOSTED_GRAFANA_ID: ${GCLOUD_HOSTED_GRAFANA_ID:-}
+      GCLOUD_PDC_CLUSTER: ${GCLOUD_PDC_CLUSTER:-}

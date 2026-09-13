@@ -39,11 +39,22 @@ type Datasource struct {
 }
 
 // NewDatasource creates a new datasource instance: it loads and validates
-// the configured settings, builds an HTTP client (via the SDK's
-// backend/httpclient, honoring TLS-skip-verify and a bounded timeout) and an
-// Authenticator matching the configured auth mode, and wires up the
-// CallResource route table.
-func NewDatasource(_ context.Context, settings backend.DataSourceInstanceSettings) (instancemgmt.Instance, error) {
+// the configured settings, builds an HTTP client and an Authenticator
+// matching the configured auth mode, and wires up the CallResource route
+// table.
+//
+// The HTTP client is built from settings.HTTPClientOptions(ctx) rather than
+// a hand-rolled httpclient.Options{} -- that SDK method is what populates
+// Options.TLS from jsonData (tlsSkipVerify, same field name/semantics as
+// before) *and* Options.ProxyOptions from Grafana Cloud's Private Data
+// Source Connect (PDC) / secure-socks-proxy configuration when it's enabled
+// for this datasource instance. Without it, Options.ProxyOptions stays nil
+// and PDC has no hook to route this datasource's requests through, even if
+// a PDC network is configured on the Grafana Cloud side. This is also why
+// ctx must be the real, SDK-provided context (not discarded/replaced with
+// context.Background()): HTTPClientOptions reads the Grafana-injected proxy
+// client cert/key/CA config via backend.GrafanaConfigFromContext(ctx).
+func NewDatasource(ctx context.Context, settings backend.DataSourceInstanceSettings) (instancemgmt.Instance, error) {
 	pluginSettings, err := models.LoadPluginSettings(settings)
 	if err != nil {
 		return nil, err
@@ -57,21 +68,25 @@ func NewDatasource(_ context.Context, settings backend.DataSourceInstanceSetting
 		return nil, err
 	}
 
-	httpClient, err := httpclient.New(httpclient.Options{
-		Timeouts: &httpclient.TimeoutOptions{
-			Timeout:               requestTimeout,
-			DialTimeout:           10 * time.Second,
-			KeepAlive:             30 * time.Second,
-			TLSHandshakeTimeout:   10 * time.Second,
-			ExpectContinueTimeout: 1 * time.Second,
-			MaxIdleConns:          100,
-			MaxIdleConnsPerHost:   100,
-			IdleConnTimeout:       90 * time.Second,
-		},
-		TLS: &httpclient.TLSOptions{
-			InsecureSkipVerify: pluginSettings.TLSSkipVerify,
-		},
-	})
+	opts, err := settings.HTTPClientOptions(ctx)
+	if err != nil {
+		return nil, fmt.Errorf("building HTTP client options: %w", err)
+	}
+	// Layer our own tuned timeouts on top of the SDK-derived options: TLS
+	// (including tlsSkipVerify) and, when applicable, ProxyOptions are
+	// already populated by HTTPClientOptions itself.
+	opts.Timeouts = &httpclient.TimeoutOptions{
+		Timeout:               requestTimeout,
+		DialTimeout:           10 * time.Second,
+		KeepAlive:             30 * time.Second,
+		TLSHandshakeTimeout:   10 * time.Second,
+		ExpectContinueTimeout: 1 * time.Second,
+		MaxIdleConns:          100,
+		MaxIdleConnsPerHost:   100,
+		IdleConnTimeout:       90 * time.Second,
+	}
+
+	httpClient, err := httpclient.New(opts)
 	if err != nil {
 		return nil, fmt.Errorf("building HTTP client: %w", err)
 	}

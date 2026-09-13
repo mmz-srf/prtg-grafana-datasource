@@ -61,6 +61,15 @@ export interface PrtgDataSourceOptions extends DataSourceJsonData {
   authMode?: PrtgAuthMode;
   username?: string;
   tlsSkipVerify?: boolean;
+  /**
+   * Routes this datasource's backend requests through Grafana's secure SOCKS
+   * proxy -- the mechanism Grafana Cloud's Private Data Source Connect (PDC)
+   * uses to reach a PRTG server in a private network. Read by the backend
+   * via settings.HTTPClientOptions(ctx) (pkg/plugin/datasource.go); this
+   * field only has an effect when Grafana's secure-socks-proxy/PDC is
+   * actually configured for this datasource instance.
+   */
+  enableSecureSocksProxy?: boolean;
 }
 
 /**

@@ -54,6 +54,13 @@ export function ConfigEditor(props: Props) {
     });
   };
 
+  const onEnableSecureSocksProxyChange = (event: ChangeEvent<HTMLInputElement>) => {
+    onOptionsChange({
+      ...options,
+      jsonData: { ...jsonData, enableSecureSocksProxy: event.target.checked },
+    });
+  };
+
   const onApiKeyChange = (event: ChangeEvent<HTMLInputElement>) => {
     onOptionsChange({
       ...options,
@@ -162,6 +169,31 @@ export function ConfigEditor(props: Props) {
           id="config-editor-tls-skip-verify"
           value={jsonData.tlsSkipVerify ?? false}
           onChange={onTlsSkipVerifyChange}
+        />
+      </InlineField>
+      <InlineField
+        label="Secure Socks Proxy"
+        labelWidth={25}
+        interactive
+        tooltip={
+          <>
+            Enable proxying through Grafana&apos;s secure SOCKS proxy &mdash; the mechanism behind Private Data
+            Source Connect (PDC), used to reach a PRTG server in a private network. See{' '}
+            <a
+              href="https://grafana.com/docs/grafana/next/setup-grafana/configure-grafana/proxy/"
+              target="_blank"
+              rel="noopener noreferrer"
+            >
+              documentation
+            </a>
+            .
+          </>
+        }
+      >
+        <InlineSwitch
+          id="config-editor-enable-secure-socks-proxy"
+          value={jsonData.enableSecureSocksProxy ?? false}
+          onChange={onEnableSecureSocksProxyChange}
         />
       </InlineField>
     </Stack>

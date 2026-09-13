@@ -113,6 +113,40 @@ curl http://localhost:8080/api/v2/experimental/groups
 
 This mock is unrelated to [pkg/plugin/fakeserver_test.go](pkg/plugin/fakeserver_test.go), a smaller, test-only PRTG double used by this repo's own Go unit tests.
 
+## Connecting to a private PRTG server from Grafana Cloud (PDC)
+
+If your PRTG server sits in a network Grafana Cloud can't reach directly, use [Private Data Source Connect (PDC)](https://grafana.com/docs/grafana-cloud/connect-externally-hosted/private-data-source-connect/) -- no inbound firewall access needed. The agent that makes this work, `grafana/pdc-agent`, is an official Grafana binary/Docker image; nothing needs to be built for it.
+
+This plugin's backend builds its HTTP client via the Grafana SDK's `settings.HTTPClientOptions(ctx)` ([pkg/plugin/datasource.go](pkg/plugin/datasource.go)), which is what gives PDC's secure-socks tunnel a hook to route this datasource's requests through -- so PDC works once it's set up below, with no further plugin changes required.
+
+**1. Create a PDC network in Grafana Cloud** -- *Connections > Private data source connect > Add new*. The **Configuration Details** page then shows three values: `GCLOUD_PDC_SIGNING_TOKEN`, `GCLOUD_HOSTED_GRAFANA_ID`, `GCLOUD_PDC_CLUSTER`.
+
+**2. Run the pdc-agent somewhere with network access to your PRTG server** (typically inside that private network -- not necessarily on the machine running this repo's `npm run server`):
+
+- Using this repo's optional docker-compose service: create a `.env` file here with the three values (`GCLOUD_PDC_SIGNING_TOKEN=...`, `GCLOUD_HOSTED_GRAFANA_ID=...`, `GCLOUD_PDC_CLUSTER=...`), then
+  ```bash
+  docker compose --profile pdc up -d pdc-agent
+  docker compose logs -f pdc-agent
+  ```
+  It's opt-in via the `pdc` [Compose profile](https://docs.docker.com/compose/how-tos/profiles/) -- a plain `docker compose up` / `npm run server` never starts it.
+- Or the plain `docker run` from Grafana's docs:
+  ```bash
+  docker run --name pdc-agent \
+    -e GCLOUD_PDC_SIGNING_TOKEN=<token> \
+    -e GCLOUD_HOSTED_GRAFANA_ID=<instance-id> \
+    -e GCLOUD_PDC_CLUSTER=<cluster> \
+    grafana/pdc-agent:latest
+  ```
+- Or the [pdc-agent binary](https://github.com/grafana/pdc-agent/releases/latest) directly on a Linux/Windows host (requires OpenSSH ≥ 9.2; Docker/Kubernetes images bundle a compatible OpenSSH already).
+
+Watch the logs for a successful tunnel connection before continuing.
+
+**3. Point the datasource at PRTG through the tunnel.** On this plugin's datasource settings page in Grafana Cloud: pick your PDC network under **Private data source connection**, and set **Server URL** to how PRTG is reachable *from where the agent runs* (an internal hostname/IP, e.g. `https://prtg.internal.example.com`) -- not a public address. Save & Test.
+
+The config editor also has its own **Secure Socks Proxy** switch (`jsonData.enableSecureSocksProxy`) -- Grafana Cloud's PDC network picker normally sets this for you; it's there mainly for parity with self-hosted Grafana's generic [secure socks proxy](https://grafana.com/docs/grafana/latest/setup-grafana/configure-grafana/proxy/) feature.
+
+(This assumes the PRTG datasource plugin itself is already installed in your Grafana Cloud stack -- a separate, standard [private plugin installation](https://grafana.com/docs/grafana-cloud/developer-resources/plugin-development/) step not covered here.)
+
 # Distributing your plugin
 
 When distributing a Grafana plugin either within the community or privately the plugin must be signed so the Grafana application can verify its authenticity. This can be done with the `@grafana/sign-plugin` package.
