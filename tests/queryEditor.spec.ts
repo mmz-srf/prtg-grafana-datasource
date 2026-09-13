@@ -62,11 +62,23 @@ test('current value query returns real data for the selected channel', async ({
   await row.getByRole('combobox', { name: 'Channel' }).click();
   await page.getByText(CHANNEL, { exact: true }).click();
 
-  await panelEditPage.setVisualization('Table');
-  await expect(panelEditPage.refreshPanel()).toBeOK();
-  // The mock server's CPU Load / Total channel is a bounded [0, 100] percentage
-  // (pkg/mockprtg/dataset.go's cpuChannels) -- not a fixed constant, so assert
-  // a real value rendered rather than an exact number.
-  await expect(panelEditPage.panel.fieldNames).toContainText(['Total']);
-  await expect(panelEditPage.panel.data).not.toContainText(['No data']);
+  // Inspect the raw /api/ds/query response instead of a rendered
+  // visualization: setVisualization()'s viz-picker flow differs across
+  // Grafana versions (see @grafana/plugin-e2e's version.gte(..., '12.4.0')
+  // branch) and is flaky in CI against older supported versions -- reading
+  // the response body directly is both more robust and a more direct check
+  // that the datasource actually returned data.
+  const response = await panelEditPage.refreshPanel();
+  expect(response.ok()).toBeTruthy();
+  const body = await response.json();
+  const frames = body.results?.A?.frames;
+  expect(Array.isArray(frames) && frames.length > 0).toBe(true);
+
+  // The mock server's CPU Load / Total channel is a bounded [0, 100]
+  // percentage (pkg/mockprtg/dataset.go's cpuChannels) -- not a fixed
+  // constant, so assert a real numeric value came back rather than an exact
+  // number. data.values is [times[], values[]] for a "current value" query.
+  const values = frames[0]?.data?.values?.[1];
+  expect(Array.isArray(values) && values.length > 0).toBe(true);
+  expect(typeof values[0]).toBe('number');
 });
