@@ -197,7 +197,8 @@ var windowPoints = map[string]int{
 // parseTimeSeriesRows expects: row 0 is ["time", "<sensorId>.<channelId>",
 // ...], each row thereafter is [RFC3339 string, float64, ...]. An optional
 // `channels=<sensorId>.<channelId>,...` query param (as FetchTimeSeries
-// always sends) selects a channel subset.
+// always sends) selects a channel subset -- ChannelInfo.ID is already in
+// that composite form (see dataset.go), matching real PRTG.
 func (s *Server) handleTimeseries(w http.ResponseWriter, r *http.Request) {
 	sensorID := r.PathValue("sensorId")
 	windowParam := r.PathValue("window")
@@ -217,7 +218,7 @@ func (s *Server) handleTimeseries(w http.ResponseWriter, r *http.Request) {
 		}
 		selected = make([]prtg.ChannelInfo, 0, len(template))
 		for _, ch := range template {
-			if want[sensorID+"."+ch.ID] {
+			if want[ch.ID] {
 				selected = append(selected, ch)
 			}
 		}
@@ -235,7 +236,7 @@ func (s *Server) handleTimeseries(w http.ResponseWriter, r *http.Request) {
 	header := make([]interface{}, 0, len(selected)+1)
 	header = append(header, "time")
 	for _, ch := range selected {
-		header = append(header, sensorID+"."+ch.ID)
+		header = append(header, ch.ID)
 	}
 
 	rows := make([][]interface{}, 0, points+1)

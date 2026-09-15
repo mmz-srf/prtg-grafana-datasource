@@ -248,8 +248,13 @@ func (d *Datasource) buildTimeSeriesFrame(ctx context.Context, query backend.Dat
 	from, to := query.TimeRange.From, query.TimeRange.To
 	window, clamped := prtg.SelectWindow(from, to)
 
-	channelKey := t.SensorID + "." + t.Channel.ID
-	result, err := d.client.FetchTimeSeries(ctx, t.SensorID, window, []string{channelKey})
+	// t.Channel.ID is already PRTG's fully-qualified "<sensorId>.<channelId>"
+	// channel key -- confirmed against a real PRTG server: channels aren't
+	// independently-ID'd objects, PRTG reports ChannelInfo.id in exactly the
+	// composite form the timeseries endpoint's own `channels` request param
+	// documents (e.g. "3074.1"). Prepending t.SensorID again here duplicated
+	// it (producing e.g. "3074.3074.1"), which PRTG rejects as NOT_FOUND.
+	result, err := d.client.FetchTimeSeries(ctx, t.SensorID, window, []string{t.Channel.ID})
 	if err != nil {
 		return nil, err
 	}

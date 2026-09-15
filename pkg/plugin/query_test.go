@@ -3,6 +3,7 @@ package plugin
 import (
 	"context"
 	"encoding/json"
+	"strings"
 	"testing"
 	"time"
 
@@ -233,7 +234,7 @@ func TestQueryData_TimeSeries_NoticeSeverity(t *testing.T) {
 			to := base.Add(tt.span)
 			s.ChannelsBySensor["s1"] = []prtg.ChannelInfo{{ID: "s1.0", Name: "Total"}}
 			s.TimeSeries["s1/"+tt.window] = [][]interface{}{
-				{"time", "s1.s1.0"},
+				{"time", "s1.0"},
 				{rfc3339(t, from), 1.0},
 				{rfc3339(t, from.Add(tt.span/2)), 2.0},
 			}
@@ -260,6 +261,47 @@ func TestQueryData_TimeSeries_NoticeSeverity(t *testing.T) {
 				t.Fatalf("expected 2 trimmed rows, got %d", timeField.Len())
 			}
 		})
+	}
+}
+
+// TestQueryData_TimeSeries_ChannelKeyNotDoublePrefixed locks in that a
+// historic time series query sends ChannelInfo.ID verbatim as the
+// `channels` filter, not ID prefixed with the sensor ID again. A real PRTG
+// server's ChannelInfo.ID is already the fully-qualified
+// "<sensorId>.<channelId>" key (channels aren't independently-ID'd
+// objects), so re-prepending the sensor ID here (as this code used to)
+// produces a bogus key like "s1.s1.0" that PRTG rejects as NOT_FOUND -- see
+// pkg/plugin/query.go's buildTimeSeriesFrame.
+func TestQueryData_TimeSeries_ChannelKeyNotDoublePrefixed(t *testing.T) {
+	s := newFakePRTGServer()
+	from := time.Date(2024, 6, 1, 0, 0, 0, 0, time.UTC)
+	to := from.Add(time.Hour)
+	s.ChannelsBySensor["s1"] = []prtg.ChannelInfo{{ID: "s1.0", Name: "Total"}}
+	s.TimeSeries["s1/live"] = [][]interface{}{
+		{"time", "s1.0"},
+		{rfc3339(t, from), 1.0},
+	}
+	ds := newTestDatasource(t, s)
+
+	resp := runSingleQuery(t, ds, queryModel{QueryType: "timeseries", SensorID: "s1", ChannelID: "s1.0"}, backend.TimeRange{From: from, To: to})
+	if resp.Error != nil {
+		t.Fatalf("unexpected error: %v", resp.Error)
+	}
+
+	var timeseriesReq string
+	for _, req := range s.Requests {
+		if strings.HasPrefix(req, "GET /api/v2/experimental/timeseries/") {
+			timeseriesReq = req
+		}
+	}
+	if timeseriesReq == "" {
+		t.Fatalf("no timeseries request recorded, requests: %v", s.Requests)
+	}
+	if !strings.Contains(timeseriesReq, "channels=s1.0") {
+		t.Fatalf("expected request to filter channels=s1.0, got %q", timeseriesReq)
+	}
+	if strings.Contains(timeseriesReq, "s1.s1.0") {
+		t.Fatalf("channel key was double-prefixed with the sensor ID: %q", timeseriesReq)
 	}
 }
 

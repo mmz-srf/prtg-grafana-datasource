@@ -318,7 +318,13 @@ func buildDataset(topology []probeSeed) *Dataset {
 					channelInfos := make([]prtg.ChannelInfo, 0, len(sns.channels))
 					runtimes := make([]channelRuntime, 0, len(sns.channels))
 					for i, cs := range sns.channels {
-						chID := strconv.Itoa(i)
+						// Real PRTG reports a channel's "id" already in the
+						// composite "<sensorId>.<localIndex>" form (channels
+						// aren't independently-ID'd objects) -- confirmed via
+						// a real server's NOT_FOUND rejection when a caller
+						// (or this mock, previously) doubled the sensor
+						// prefix. Match that here, not a bare local index.
+						chID := sensorID + "." + strconv.Itoa(i)
 						chRef := prtg.ReferencedObject{ID: chID, Name: cs.name, Type: "REFERENCED_CHANNEL"}
 						chPath := appendPath(sensorPath, chRef)
 
@@ -364,7 +370,10 @@ func (ds *Dataset) EvaluateSensor(sensorID string, t time.Time) map[string]float
 		var v float64
 		switch {
 		case rt.signal != nil:
-			v = rt.signal.evaluate(sensorID+"."+rt.id, t)
+			// rt.id is already unique across the whole dataset (it's the
+			// composite "<sensorId>.<localIndex>" key), so it alone is a
+			// fine phase-hash seed -- no need to prepend sensorID again.
+			v = rt.signal.evaluate(rt.id, t)
 		case rt.derive != nil:
 			v = rt.derive(byKey)
 		}
