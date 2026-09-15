@@ -90,7 +90,7 @@ jobs:
           fi
 
       - name: Sign plugin
-        run: npm run sign --rootUrls ${{ secrets.GRAFANA_PLUGIN_SIGNING_ROOT_URLS }}
+        run: npm run sign --rootUrls ${{ env.GRAFANA_PLUGIN_SIGNING_ROOT_URLS }}
         if: ${{ env.GRAFANA_ACCESS_POLICY_TOKEN != '' }}
 
       - name: Get plugin metadata
