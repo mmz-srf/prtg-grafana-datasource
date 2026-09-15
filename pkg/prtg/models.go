@@ -1,6 +1,11 @@
 package prtg
 
-import "strings"
+import (
+	"encoding/json"
+	"fmt"
+	"strconv"
+	"strings"
+)
 
 // ReferencedObject is a lightweight reference to another PRTG object, as
 // used in `path` (and `channels`, for SensorInfo) reference-array fields
@@ -96,6 +101,55 @@ type Measurement struct {
 	Average      *float64 `json:"average"`
 	Minimum      *float64 `json:"minimum"`
 	Maximum      *float64 `json:"maximum"`
+}
+
+// UnmarshalJSON decodes a Measurement, tolerating PRTG APIv2 sending
+// display_value as either an already-formatted string (the common case,
+// e.g. "42.5 %") or a bare JSON number -- observed in production for some
+// sensor/channel kinds (e.g. a "Disk Free: C:\" sensor's channels). A plain
+// `string`-typed field would fail json.Unmarshal outright for the latter.
+func (m *Measurement) UnmarshalJSON(data []byte) error {
+	var alias struct {
+		Value        *float64        `json:"value"`
+		DisplayValue json.RawMessage `json:"display_value"`
+		Timestamp    string          `json:"timestamp"`
+		Average      *float64        `json:"average"`
+		Minimum      *float64        `json:"minimum"`
+		Maximum      *float64        `json:"maximum"`
+	}
+	if err := json.Unmarshal(data, &alias); err != nil {
+		return err
+	}
+
+	displayValue, err := decodeFlexibleString(alias.DisplayValue)
+	if err != nil {
+		return fmt.Errorf("prtg: decoding display_value: %w", err)
+	}
+
+	m.Value = alias.Value
+	m.DisplayValue = displayValue
+	m.Timestamp = alias.Timestamp
+	m.Average = alias.Average
+	m.Minimum = alias.Minimum
+	m.Maximum = alias.Maximum
+	return nil
+}
+
+// decodeFlexibleString decodes a JSON string, number, or null into a Go
+// string, for fields PRTG APIv2 doesn't consistently send as one type.
+func decodeFlexibleString(raw json.RawMessage) (string, error) {
+	if len(raw) == 0 || string(raw) == "null" {
+		return "", nil
+	}
+	var s string
+	if err := json.Unmarshal(raw, &s); err == nil {
+		return s, nil
+	}
+	var f float64
+	if err := json.Unmarshal(raw, &f); err == nil {
+		return strconv.FormatFloat(f, 'f', -1, 64), nil
+	}
+	return "", fmt.Errorf("unsupported JSON type %s", raw)
 }
 
 // Limits carries a channel's configured warning/error thresholds, as
