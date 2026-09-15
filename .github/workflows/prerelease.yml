@@ -48,9 +48,12 @@ jobs:
 
       - name: Sign plugin
         # Uncomment to enable plugin signing: add a GRAFANA_ACCESS_POLICY_TOKEN
-        # repository secret. See https://grafana.com/developers/plugin-tools/publish-a-plugin/sign-a-plugin#generate-an-access-policy-token
-        run: npm run sign
-        if: ${{ env.GRAFANA_ACCESS_POLICY_TOKEN != '' }}
+        # repository secret and a GRAFANA_PLUGIN_SIGNING_ROOT_URLS repository
+        # *variable* (Settings > Secrets and variables > Actions > Variables
+        # -- the `vars` context, not `env`). See
+        # https://grafana.com/developers/plugin-tools/publish-a-plugin/sign-a-plugin#generate-an-access-policy-token
+        run: npm run sign -- --rootUrls "${{ vars.GRAFANA_PLUGIN_SIGNING_ROOT_URLS }}"
+        if: ${{ env.GRAFANA_ACCESS_POLICY_TOKEN != '' && vars.GRAFANA_PLUGIN_SIGNING_ROOT_URLS != '' }}
         env:
           GRAFANA_ACCESS_POLICY_TOKEN: ${{ secrets.GRAFANA_ACCESS_POLICY_TOKEN }}
 
