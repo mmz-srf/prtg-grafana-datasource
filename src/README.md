@@ -1,46 +1,23 @@
 # PRTG Datasource
 
-To help maximize the impact of your README and improve usability for users, we propose the following loose structure:
+![Marketplace Version](https://img.shields.io/badge/dynamic/json?logo=grafana&query=$.version&url=https://grafana.com/api/plugins/srgssr-prtg-datasource&label=Version&prefix=v&color=F47A20) ![Marketplace downloads](https://img.shields.io/badge/dynamic/json?logo=grafana&query=$.downloads&url=https://grafana.com/api/plugins/srgssr-prtg-datasource&label=Downloads&color=F47A20) ![Grafana Version](https://img.shields.io/badge/dynamic/json?logo=grafana&query=$.grafanaDependency&url=https://grafana.com/api/plugins/srgssr-prtg-datasource&label=Grafana&prefix=v&color=F47A20)
 
-**BEFORE YOU BEGIN**
-- Ensure all links are absolute URLs so that they will work when the README is displayed within Grafana and Grafana.com
-- Be inspired ✨
-  - [grafana-polystat-panel](https://github.com/grafana/grafana-polystat-panel)
-  - [volkovlabs-variable-panel](https://github.com/volkovlabs/volkovlabs-variable-panel)
+[PRTG](https://www.paessler.com/prtg) is Paessler's all-in-one infrastructure monitoring platform. It polls thousands of **sensors** across your network — ping, CPU load, traffic, disk space, custom scripts, and hundreds of other sensor types — and keeps track of their current status and historic values.
 
-**ADD SOME BADGES**
 
-Badges convey useful information at a glance for users whether in the Catalog or viewing the source code. You can use the generator on [Shields.io](https://shields.io/badges/dynamic-json-badge) together with the Grafana.com API
-to create dynamic badges that update automatically when you publish a new version to the marketplace.
+![Panel editor with a historic time series query](https://raw.githubusercontent.com/mmz-srf/prtg-grafana-datasource/refs/heads/main/src/img/screenshots/panel-editor-historic.png)
 
-- For the URL parameter use `https://grafana.com/api/plugins/your-plugin-id`.
-- Example queries:
-  - Downloads: `$.downloads`
-  - Catalog Version: `$.version`
-  - Grafana Dependency: `$.grafanaDependency`
-  - Signature Type: `$.versionSignatureType`
-- Optionally, for the logo parameter use `grafana`.
-
-Full example: ![Dynamic JSON Badge](https://img.shields.io/badge/dynamic/json?logo=grafana&query=$.version&url=https://grafana.com/api/plugins/grafana-polystat-panel&label=Marketplace&prefix=v&color=F47A20)
-
-Consider other [badges](https://shields.io/badges) as you feel appropriate for your project.
-
-## Overview / Introduction
-Provide one or more paragraphs as an introduction to your plugin to help users understand why they should use it.
-
-Consider including screenshots:
-- in [plugin.json](https://grafana.com/developers/plugin-tools/reference/plugin-json#info) include them as relative links.
-- in the README ensure they are absolute URLs.
 
 ## Requirements
-List any requirements or dependencies they may need to run the plugin.
 
-## Getting Started
-Provide a quick start on how to configure and use the plugin.
+- Grafana **12.3.0** or later.
+- PRTG with the **Application Server / new UI and API v2** activated (*PRTG Setup → Activate New UI And New API* — on by default from PRTG 25.2.106 onward).
 
-## Documentation
-If your project has dedicated documentation available for users, provide links here. For help in following Grafana's style recommendations for technical documentation, refer to our [Writer's Toolkit](https://grafana.com/docs/writers-toolkit/).
+## Getting started
+
+1. Install the plugin and add a new **PRTG-Datasource** in Grafana.
+2. Set the **Server URL** of your PRTG core server and choose an authentication mode (API key, or username & password).
+3. In a panel, pick a query type — *Current value* or *Historic time series* — and select a sensor/channel via the hierarchy picker, or switch to regex match mode to target many at once.
 
 ## Contributing
-Do you want folks to contribute to the plugin or provide feedback through specific means? If so, tell them how!
--->
+We welcome contributions! Please see [DEVELOPMENT.md](https://github.com/mmz-srf/prtg-grafana-datasource/blob/main/DEVELOPMENT.md) for details on how to set up a development environment and submit changes.
