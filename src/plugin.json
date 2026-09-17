@@ -1,23 +1,41 @@
 {
   "$schema": "https://raw.githubusercontent.com/grafana/grafana/main/docs/sources/developers/plugins/plugin.schema.json",
   "type": "datasource",
-  "name": "PRTG-Datasource",
-  "id": "mmsgianni-prtg-datasource",
+  "name": "PRTG",
+  "id": "srgssr-prtg-datasource",
   "metrics": true,
   "backend": true,
   "executable": "gpx_prtg_datasource",
   "info": {
-    "description": "",
+    "description": "Query and visualize PRTG Network Monitor sensor data",
     "author": {
       "name": "Gianni Carafa"
     },
-    "keywords": ["datasource"],
+    "keywords": ["datasource", "PRTG"],
     "logos": {
       "small": "img/tacho_vector.svg",
       "large": "img/tacho_vector.svg"
     },
-    "links": [],
-    "screenshots": [],
+    "links": [
+      {
+        "name": "Website",
+        "url": "https://github.com/mmz-srf/prtg-grafana-datasource"
+      },
+      {
+        "name": "License",
+        "url": "https://github.com/mmz-srf/prtg-grafana-datasource?tab=Apache-2.0-1-ov-file"
+      }
+    ],
+    "screenshots": [
+      {
+        "name": "Datasource configuration",
+        "path": "img/screenshot-datasource-configuration.png"
+      },
+      {
+        "name": "Panel",
+        "path": "img/screenshot-panel.png"
+      }
+    ],
     "version": "%VERSION%",
     "updated": "%TODAY%"
   },

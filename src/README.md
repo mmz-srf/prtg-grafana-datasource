@@ -1,10 +1,6 @@
-<!-- This README file is going to be the one displayed on the Grafana.com website for your plugin. Uncomment and replace the content here before publishing.
+# PRTG Datasource
 
-Remove any remaining comments before publishing as these may be displayed on Grafana.com -->
-
-# Prtg-Datasource
-
-<!-- To help maximize the impact of your README and improve usability for users, we propose the following loose structure:
+To help maximize the impact of your README and improve usability for users, we propose the following loose structure:
 
 **BEFORE YOU BEGIN**
 - Ensure all links are absolute URLs so that they will work when the README is displayed within Grafana and Grafana.com

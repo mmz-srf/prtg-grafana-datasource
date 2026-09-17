@@ -99,12 +99,12 @@ export function ConfigEditor(props: Props) {
         &rarr; Activate New UI And New API). Every API v2 endpoint this plugin depends on is currently marked
         &quot;Experimental&quot; by Paessler and may change between PRTG releases.
       </Alert>
-      <InlineField label="Server URL" labelWidth={25} interactive tooltip="The base URL of your PRTG server">
+      <InlineField label="Server URL" labelWidth={25} interactive tooltip="The base URL of your PRTG server (default port is 1616)">
         <Input
           id="config-editor-server-url"
           onChange={onServerUrlChange}
           value={jsonData.serverUrl ?? ''}
-          placeholder="https://prtg.example.com"
+          placeholder="https://prtg.example.com:1616"
           width={80}
         />
       </InlineField>

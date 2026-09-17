@@ -28,7 +28,7 @@ PRTG has its own UI and alerting, but most teams already run Grafana as their si
 
 **Historic time series query editor**:
 
-![Historic time series query editor](docs/img/panel-editor-historic.png)
+![Historic time series query editor](src/img/screenshots/panel-editor-historic.png)
 
  <details>
  <summary>more screenshots</summary>
@@ -36,15 +36,15 @@ PRTG has its own UI and alerting, but most teams already run Grafana as their si
 
 **Datasource configuration** — server URL, authentication, TLS and secure-proxy options:
 
-![Datasource configuration page](docs/img/datasource-config-page.png)
+![Datasource configuration page](src/img/screenshots/datasource-config-page.png)
 
 **Panel editor** — a historic time series query, picked via the Group → Device → Sensor → Channel hierarchy:
 
-![Panel editor with a historic time series query](docs/img/panel-editor-full.png)
+![Panel editor with a historic time series query](src/img/screenshots/panel-editor-full.png)
 
 **Current value query editor**, in regex match mode:
 
-![Current value query editor in regex match mode](docs/img/panel-editpr-current.png)
+![Current value query editor in regex match mode](src/img/screenshots/panel-editor-current.png)
 
  </details>
 
