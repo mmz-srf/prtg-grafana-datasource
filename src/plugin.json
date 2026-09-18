@@ -29,11 +29,11 @@
     "screenshots": [
       {
         "name": "Datasource configuration",
-        "path": "img/screenshot-datasource-configuration.png"
+        "path": "img/screenshots/datasource-config-page.png"
       },
       {
         "name": "Panel",
-        "path": "img/screenshot-panel.png"
+        "path": "img/screenshots/panel-editor-full.png"
       }
     ],
     "version": "%VERSION%",
