@@ -12,6 +12,7 @@ services:
   # provisioned "prtg-datasource" datasource (provisioning/datasources/datasources.yml)
   # points at it by default.
   mock-prtg:
+    image: ghcr.io/mmz-srf/prtg-grafana-datasource/mockserver:latest
     build:
       context: .
       dockerfile: Dockerfile.mockserver
