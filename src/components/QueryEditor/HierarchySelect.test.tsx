@@ -1,5 +1,5 @@
 import React from 'react';
-import { render, screen } from '@testing-library/react';
+import { act, render, screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { HierarchySelect } from './HierarchySelect';
 import { HierarchyItem } from './toSelectableValue';
@@ -41,9 +41,17 @@ function renderSelect(overrides: {
 }
 
 describe('HierarchySelect', () => {
-  it('calls the fetcher on mount', () => {
+  it('calls the fetcher on mount', async () => {
     const { fetcher } = renderSelect();
     expect(fetcher).toHaveBeenCalledTimes(1);
+
+    // Let the mocked fetcher's already-resolved promise settle inside
+    // act() instead of leaving its state updates pending past the end of
+    // the test, which would otherwise log a spurious "not wrapped in
+    // act(...)" warning.
+    await act(async () => {
+      await Promise.resolve();
+    });
   });
 
   it("shows the saved display name before the async options have loaded", () => {

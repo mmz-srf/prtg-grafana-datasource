@@ -5,6 +5,20 @@ import { QueryEditor } from './QueryEditor';
 import { DataSource } from '../../datasource';
 import { DEFAULT_QUERY, PrtgQuery } from '../../types';
 
+// HierarchyPicker's and RegexPicker's own logic is covered by their own
+// test files. These tests only care which of the two is on screen, so
+// stub both out -- rendering the real ones would also exercise
+// HierarchySelect's real `useResourceOptions` async fetches, which settle
+// after each test's assertions run (outside any `act()`), producing
+// spurious "not wrapped in act(...)" warnings without testing anything
+// QueryEditor itself is responsible for.
+jest.mock('./HierarchyPicker', () => ({
+  HierarchyPicker: () => <input aria-label="Group" readOnly value="" />,
+}));
+jest.mock('./RegexPicker', () => ({
+  RegexPicker: () => <input placeholder="e.g. CPU Load.*" readOnly value="" />,
+}));
+
 function createDatasource(): DataSource {
   return {
     getGroups: jest.fn().mockResolvedValue([]),
