@@ -2,6 +2,7 @@ services:
   grafana:
     user: root
     container_name: 'srgssr-prtg-datasource'
+#    image: grafana/${GRAFANA_IMAGE:-grafana}:${GRAFANA_VERSION:-13.1.0}
 
     build:
       context: .
