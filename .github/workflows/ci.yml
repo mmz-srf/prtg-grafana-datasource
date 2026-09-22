@@ -183,6 +183,9 @@ jobs:
       - name: Install dev dependencies
         run: npm ci
 
+      - name: Build frontend
+        run: npm run build
+
       - name: Start Grafana
         run: |
           docker compose pull
