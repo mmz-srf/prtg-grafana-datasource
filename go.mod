@@ -1,8 +1,8 @@
 module github.com/srgssr/prtg-datasource
 
-go 1.26.5
+go 1.25.14
 
-require github.com/grafana/grafana-plugin-sdk-go v0.296.4
+require github.com/grafana/grafana-plugin-sdk-go v0.292.0
 
 require (
 	github.com/BurntSushi/toml v1.6.0 // indirect
