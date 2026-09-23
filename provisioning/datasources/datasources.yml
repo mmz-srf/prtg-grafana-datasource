@@ -2,7 +2,7 @@ apiVersion: 1
 
 datasources:
   - name: 'prtg-datasource'
-    type: 'srgssr-prtg-datasource'
+    type: 'swisstxt-prtg-datasource'
     access: proxy
     isDefault: false
     orgId: 1

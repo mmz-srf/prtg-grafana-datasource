@@ -1,6 +1,6 @@
 # Installing the PRTG Datasource Plugin
 
-This guide covers installing the **PRTG-Datasource** plugin (`srgssr-prtg-datasource`) on a self-hosted Grafana instance or on Grafana Cloud, and configuring it to talk to a real PRTG server.
+This guide covers installing the **PRTG-Datasource** plugin (`swisstxt-prtg-datasource`) on a self-hosted Grafana instance or on Grafana Cloud, and configuring it to talk to a real PRTG server.
 
 ## Prerequisites
 
@@ -26,8 +26,8 @@ Mount the extracted plugin into Grafana's plugin directory, and allow it to load
 ```bash
 docker run -d \
   -p 3000:3000 \
-  -v "$(pwd)/srgssr-prtg-datasource:/var/lib/grafana/plugins/srgssr-prtg-datasource" \
-  -e GF_PLUGINS_ALLOW_LOADING_UNSIGNED_PLUGINS=srgssr-prtg-datasource \
+  -v "$(pwd)/swisstxt-prtg-datasource:/var/lib/grafana/plugins/swisstxt-prtg-datasource" \
+  -e GF_PLUGINS_ALLOW_LOADING_UNSIGNED_PLUGINS=swisstxt-prtg-datasource \
   grafana/grafana:12.3.0
 ```
 
@@ -36,8 +36,8 @@ Or let Grafana's own entrypoint fetch and unpack the release zip for you, via [`
 ```bash
 docker run -d \
   -p 3000:3000 \
-  -e GF_INSTALL_PLUGINS="https://github.com/mmz-srf/prtg-grafana-datasource/releases/download/vX.Y.Z/<asset>.zip;srgssr-prtg-datasource" \
-  -e GF_PLUGINS_ALLOW_LOADING_UNSIGNED_PLUGINS=srgssr-prtg-datasource \
+  -e GF_INSTALL_PLUGINS="https://github.com/mmz-srf/prtg-grafana-datasource/releases/download/vX.Y.Z/<asset>.zip;swisstxt-prtg-datasource" \
+  -e GF_PLUGINS_ALLOW_LOADING_UNSIGNED_PLUGINS=swisstxt-prtg-datasource \
   grafana/grafana:12.3.0
 ```
 
@@ -47,12 +47,12 @@ Replace `vX.Y.Z` and `<asset>.zip` with the actual release tag and asset filenam
 
 1. Extract the release zip into Grafana's plugin directory (typically `/var/lib/grafana/plugins` on a Linux package install; `data/plugins` for a binary install):
    ```bash
-   unzip srgssr-prtg-datasource-*.zip -d /var/lib/grafana/plugins/srgssr-prtg-datasource
+   unzip swisstxt-prtg-datasource-*.zip -d /var/lib/grafana/plugins/swisstxt-prtg-datasource
    ```
-2. Allow this plugin ID to load unsigned. Either set the environment variable `GF_PLUGINS_ALLOW_LOADING_UNSIGNED_PLUGINS=srgssr-prtg-datasource`, or add it to `grafana.ini`:
+2. Allow this plugin ID to load unsigned. Either set the environment variable `GF_PLUGINS_ALLOW_LOADING_UNSIGNED_PLUGINS=swisstxt-prtg-datasource`, or add it to `grafana.ini`:
    ```ini
    [plugins]
-   allow_loading_unsigned_plugins = srgssr-prtg-datasource
+   allow_loading_unsigned_plugins = swisstxt-prtg-datasource
    ```
 3. Restart Grafana.
 4. Under *Administration → Plugins and data → Plugins*, confirm **PRTG-Datasource** shows up (it won't appear in the catalog search since it isn't published there — look under "Installed").
@@ -91,7 +91,7 @@ To provision this instead of clicking through the UI (e.g. for infra-as-code set
 apiVersion: 1
 datasources:
   - name: 'PRTG'
-    type: 'srgssr-prtg-datasource'
+    type: 'swisstxt-prtg-datasource'
     access: proxy
     jsonData:
       serverUrl: 'https://prtg.example.com'

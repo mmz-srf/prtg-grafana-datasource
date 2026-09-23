@@ -17,7 +17,7 @@ function createDatasource(): DataSource {
   const instanceSettings = {
     id: 1,
     uid: 'test-uid',
-    type: 'srgssr-prtg-datasource',
+    type: 'swisstxt-prtg-datasource',
     name: 'PRTG',
     jsonData: {},
   } as unknown as DataSourceInstanceSettings<PrtgDataSourceOptions>;

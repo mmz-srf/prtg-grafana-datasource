@@ -1,7 +1,7 @@
 services:
   grafana:
     user: root
-    container_name: 'srgssr-prtg-datasource'
+    container_name: 'swisstxt-prtg-datasource'
 #    image: grafana/${GRAFANA_IMAGE:-grafana}:${GRAFANA_VERSION:-13.1.0}
 
     build:
@@ -20,13 +20,13 @@ services:
     cap_add:
       - SYS_PTRACE
     volumes:
-      - ../dist:/var/lib/grafana/plugins/srgssr-prtg-datasource
+      - ../dist:/var/lib/grafana/plugins/swisstxt-prtg-datasource
       - ../provisioning:/etc/grafana/provisioning
-      - ..:/root/srgssr-prtg-datasource
+      - ..:/root/swisstxt-prtg-datasource
 
     environment:
       NODE_ENV: development
-      GF_LOG_FILTERS: plugin.srgssr-prtg-datasource:debug
+      GF_LOG_FILTERS: plugin.swisstxt-prtg-datasource:debug
       GF_LOG_LEVEL: debug
       GF_DATAPROXY_LOGGING: 1
-      GF_PLUGINS_ALLOW_LOADING_UNSIGNED_PLUGINS: srgssr-prtg-datasource
+      GF_PLUGINS_ALLOW_LOADING_UNSIGNED_PLUGINS: swisstxt-prtg-datasource

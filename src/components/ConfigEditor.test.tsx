@@ -14,7 +14,7 @@ function createOptions(
     orgId: 1,
     name: 'PRTG',
     typeLogoUrl: '',
-    type: 'srgssr-prtg-datasource',
+    type: 'swisstxt-prtg-datasource',
     typeName: 'PRTG',
     access: 'proxy',
     url: '',

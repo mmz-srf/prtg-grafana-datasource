@@ -1,6 +1,6 @@
 # PRTG Datasource
 
-![Marketplace Version](https://img.shields.io/badge/dynamic/json?logo=grafana&query=$.version&url=https://grafana.com/api/plugins/srgssr-prtg-datasource&label=Version&prefix=v&color=F47A20) ![Marketplace downloads](https://img.shields.io/badge/dynamic/json?logo=grafana&query=$.downloads&url=https://grafana.com/api/plugins/srgssr-prtg-datasource&label=Downloads&color=F47A20) ![Grafana Version](https://img.shields.io/badge/dynamic/json?logo=grafana&query=$.grafanaDependency&url=https://grafana.com/api/plugins/srgssr-prtg-datasource&label=Grafana&prefix=v&color=F47A20)
+![Marketplace Version](https://img.shields.io/badge/dynamic/json?logo=grafana&query=$.version&url=https://grafana.com/api/plugins/swisstxt-prtg-datasource&label=Version&prefix=v&color=F47A20) ![Marketplace downloads](https://img.shields.io/badge/dynamic/json?logo=grafana&query=$.downloads&url=https://grafana.com/api/plugins/swisstxt-prtg-datasource&label=Downloads&color=F47A20) ![Grafana Version](https://img.shields.io/badge/dynamic/json?logo=grafana&query=$.grafanaDependency&url=https://grafana.com/api/plugins/swisstxt-prtg-datasource&label=Grafana&prefix=v&color=F47A20)
 
 [PRTG](https://www.paessler.com/prtg) is Paessler's all-in-one infrastructure monitoring platform. It polls thousands of **sensors** across your network — ping, CPU load, traffic, disk space, custom scripts, and hundreds of other sensor types — and keeps track of their current status and historic values.
 
