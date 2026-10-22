@@ -1,0 +1,91 @@
+# Builds and packages the plugin the same way as ci.yml, then runs the full
+# Grafana plugin validator (https://github.com/grafana/plugin-validator)
+# against the archive and the source code -- the same checks Grafana Labs
+# runs when a plugin is submitted to the catalog.
+#
+# The plugin is only signed when GRAFANA_ACCESS_POLICY_TOKEN and
+# GRAFANA_PLUGIN_SIGNING_ROOT_URLS are configured; without them the validator
+# reports the archive as unsigned.
+name: Validate plugin
+
+on:
+  push:
+    branches:
+      - main
+  pull_request:
+    branches:
+      - main
+  workflow_dispatch: {}
+
+permissions:
+  contents: read
+
+jobs:
+  validate:
+    name: Plugin validator
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    env:
+      GRAFANA_ACCESS_POLICY_TOKEN: ${{ secrets.GRAFANA_ACCESS_POLICY_TOKEN }}
+      GRAFANA_PLUGIN_SIGNING_ROOT_URLS: ${{ vars.GRAFANA_PLUGIN_SIGNING_ROOT_URLS }}
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          persist-credentials: false
+
+      # Clean copy of the tracked sources (no node_modules/dist) for the
+      # source-code analyzers, taken before anything is installed or built.
+      - name: Export source code
+        run: |
+          mkdir -p "${RUNNER_TEMP}/source"
+          git archive --format=tar HEAD | tar -x -C "${RUNNER_TEMP}/source"
+
+      - name: Setup Node.js environment
+        uses: actions/setup-node@v7
+        with:
+          node-version: '22'
+          cache: 'npm'
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Build frontend
+        run: npm run build
+
+      - name: Setup Go environment
+        uses: actions/setup-go@v7
+        with:
+          go-version-file: go.mod
+
+      - name: Build backend
+        uses: magefile/mage-action@a662bd8c29d8106879588cfff83b2faf6e6f59db # v4.0.0
+        with:
+          version: latest
+          args: buildAll
+
+      - name: Sign plugin
+        run: npm run sign
+        if: ${{ env.GRAFANA_ACCESS_POLICY_TOKEN != '' && env.GRAFANA_PLUGIN_SIGNING_ROOT_URLS != '' }}
+
+      - name: Package plugin
+        id: package
+        run: |
+          PLUGIN_ID=$(jq -r .id dist/plugin.json | tr -cd 'a-zA-Z0-9._-')
+          PLUGIN_VERSION=$(jq -r .info.version dist/plugin.json)
+          ARCHIVE="${PLUGIN_ID}-${PLUGIN_VERSION}.zip"
+
+          cp -r dist "${PLUGIN_ID}"
+          zip -qr "${ARCHIVE}" "${PLUGIN_ID}"
+
+          echo "archive=${ARCHIVE}" >> "$GITHUB_OUTPUT"
+
+      - name: Run plugin validator
+        env:
+          ARCHIVE: ${{ steps.package.outputs.archive }}
+        run: |
+          docker run --pull=always \
+            -v "${PWD}/${ARCHIVE}:/archive.zip:ro" \
+            -v "${RUNNER_TEMP}/source:/source_code:ro" \
+            grafana/plugin-validator-cli \
+            -sourceCodeUri file:///source_code \
+            /archive.zip
